@@ -58,11 +58,11 @@ class Fsyslog(socketserver.StreamRequestHandler):
         json_payload = json.loads(json_text)
         for key in self.config['exclude']:
             rgx = self.config['exclude'][key]
-            value = self.get(json_payload, key)
+            value = self.get(json_payload, self.config['fields'][key])
             p = re.compile(rgx)
             m = p.match(str(value))
             if m:
-                # print(f'Message: "{message}"\nexcluded by exclude statement:\n{key} = {rgx}')
+                print(f'Message: "{message}"\nexcluded by exclude statement:\n{key} = {rgx}')
                 return None
         pdata = {}
         pdata['measurement'] = self.config["measurement"]
