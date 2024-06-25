@@ -10,13 +10,16 @@ from field_process import process
 
 CONFIG_FILE = 'config.toml'
 
-class Fsyslog(socketserver.StreamRequestHandler):
+def get_config():
+    config = {}
+    with open(CONFIG_FILE, 'r') as f:
+        config = toml.load(f)
+    return config
 
+class Fsyslog(socketserver.StreamRequestHandler):
     
-    def configure(self):
-        self.config = {}
-        with open(CONFIG_FILE, 'r') as f:
-            self.config = toml.load(f)
+    def configure(self, config):
+        self.config = get_config()
 
 
     def get(self, payload, kpath):
@@ -43,7 +46,6 @@ class Fsyslog(socketserver.StreamRequestHandler):
                 values[name] = process(value, process_as[name] if name in process_as else 'identity') 
 
 
-# TODO Data post processing. i.e. add tags based on values from data
 
     def parse(self, message):
 
@@ -58,7 +60,7 @@ class Fsyslog(socketserver.StreamRequestHandler):
             rgx = self.config['exclude'][key]
             value = self.get(json_payload, key)
             p = re.compile(rgx)
-            m = p.match(value)
+            m = p.match(str(value))
             if m:
                 # print(f'Message: "{message}"\nexcluded by exclude statement:\n{key} = {rgx}')
                 return None
@@ -98,17 +100,20 @@ class Fsyslog(socketserver.StreamRequestHandler):
         message = self.rfile.readline().strip()
         #self.client_address[0]))
         #self.wfile.write(self.data.upper())
-        # try:
-        point = self.parse(str(message))
-        if point == None:
-            return
-        write_api.write(bucket=self.config['influx']["bucket"], org=self.config['influx']["org"], record=point)
-        # except Exception as err:
-        #     print(f'Could not parse message: {message}', err)
+        try:
+            point = self.parse(str(message))
+            if point == None:
+                return
+            write_api.write(bucket=self.config['influx']["bucket"], org=self.config['influx']["org"], record=point)
+        except Exception as err:
+            print(f'Could not parse message: {message}', err)
 
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 5140
+    config = get_config()
+    HOST = config["server"]['host']
+    PORT = config['server']['port']
+    print(f'Listening on {HOST}:{PORT}')
 
     with socketserver.TCPServer((HOST, PORT), Fsyslog) as server:
         server.serve_forever()

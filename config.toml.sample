@@ -1,0 +1,60 @@
+[server]
+# Where does this app listen
+    host = 'localhost'
+    port = 514
+[influx]
+# InfluxDB connection details
+    bucket = 'bucket'
+    org = 'org'
+    token = 'token'
+    uri = 'uri'
+
+[measurement]
+# InfluxDB measurement
+    name = 'measurement'
+
+[fields]
+# Fields that will be created from each message.
+# Left hand side is the name of the field in InfluxDB, right is a path to the data within the JSON message. 
+    StartTime = 'StartTime'
+    EndTime = 'EndTime'
+    bits = 'Metrics/bits'
+
+
+[tags]
+# Tags taht will be created from each message.
+# Left hand side is the name of the field in InfluxDB, right is a path to the data within the JSON message. 
+    AlarmID = 'AlarmID'
+    AlarmPolicyId = 'AlarmPolicyId'
+    AlarmPolicyName = 'AlarmPolicyName'
+    AlarmThresholdID = 'AlarmThresholdID'
+    IP_dst_cidr = 'Dimensions/IP_dst_cidr_.*'
+    Port_dst = 'Dimensions/Port_dst'
+    Proto = 'Dimensions/Proto'
+
+[exclude]
+# Filter defining messages that will be ignored. Left hand is a field name as defined in [fields] (right hand side of the = ), right is a regex. 
+    EndTime = 'ongoing'
+
+[process.fields]
+# Additional processing when extracting fields from the message. Currently only option is 'unixtime'
+    StartTime = 'unixtime'
+    EndTime = 'unixtime'
+    
+[process.tags]
+# Additional processing when extracting tags from the message. Currently only option is 'unixtime'
+
+
+[[postprocess]]
+# Creates additional tags based on the values of existing fields/tags. Multiple of these entries can be created.
+    [postprocess.match]
+	#Matching criteria. 
+       type = <field|tag>
+       name = <field_or_tag_name>
+       regex = <regex>
+    [postprocess.target]
+	#The tag that is created.
+       type = <field|tag>
+       name = <tag_or_field_name>
+       value = <value_to_assign>
+

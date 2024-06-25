@@ -1,3 +1,6 @@
+[server]
+    host = 'localhost'
+    port = 5140
 [influx]
     bucket = 'bucket'
     org = 'org'
