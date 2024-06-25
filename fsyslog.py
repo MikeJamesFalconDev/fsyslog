@@ -76,19 +76,22 @@ class Fsyslog(socketserver.StreamRequestHandler):
         return p
 
     def postprocess(self, pdata):
-        pprint(self.config['postprocess'])
+        if ('postprocess' in self.config):
+            for postConf in self.config['postprocess']:
+                if not('match' in postConf) or not('target' in postConf):
+                    print('Invalid configuration in postprocessing. Missing "match" or "target"')
+                    continue
+                matcher = postConf["match"]
+                matchOn = pdata['fields'] if matcher['type'] == 'field' else pdata['tags']
+                targetConf = postConf['target']
+                p = re.compile(matcher['regex'])
+                m = p.match(matchOn[matcher['name']])
+                if m:
+                    print('matched postprocess {matcher["name"]}')
+                    targetOn = pdata['fields'] if targetConf['type'] == 'field' else pdata['tags']
+                    target = targetConf['name'] if targetConf['name'] else matcher['name']
+                    targetOn[target] = targetConf['value']
 
-        for postConf in self.config['postprocess']:
-            matcher = postConf["match"]
-            matchOn = pdata['fields'] if matcher['type'] == 'field' else pdata['tags']
-            targetConf = postConf['target']
-            p = re.compile(matcher['regex'])
-            m = p.match(matchOn[matcher['name']])
-            if m:
-                print('matched postprocess {matcher["name"]}')
-                targetOn = pdata['fields'] if targetConf['type'] == 'field' else pdata['tags']
-                target = targetConf['name'] if targetConf['name'] else matcher['name']
-                targetOn[target] = targetConf['value']
 
 
             
