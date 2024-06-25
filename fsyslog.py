@@ -18,7 +18,7 @@ def get_config():
 
 class Fsyslog(socketserver.StreamRequestHandler):
     
-    def configure(self, config):
+    def configure(self):
         self.config = get_config()
 
 
