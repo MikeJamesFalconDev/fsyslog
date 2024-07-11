@@ -65,7 +65,7 @@ class Fsyslog(socketserver.StreamRequestHandler):
                 print(f'Message: "{message}"\nexcluded by exclude statement:\n{key} = {rgx}')
                 return None
         pdata = {}
-        pdata['measurement'] = self.config["measurement"]
+        pdata['measurement'] = self.config.measurement.name
         pdata['fields'] = {}
         self.add(json_payload, pdata['fields'], self.config['fields'], self.config['process']['fields'])
         pdata['tags'] = {}
