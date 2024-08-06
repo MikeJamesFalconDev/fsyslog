@@ -13,8 +13,10 @@ def to_unixtime(value):
 
 processMap = {
     "identity": identity,
-    "unixtime": to_unixtime
+    "unixtime": to_unixtime,
+    "int"     : int
 }
 
 def process(value, process_as):
+    print(f'Converting {value} as {process_as} with function {processMap[process_as]}')
     return processMap[process_as](value)
