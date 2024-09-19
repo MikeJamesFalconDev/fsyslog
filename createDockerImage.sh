@@ -15,6 +15,8 @@ if [ $GIT_TAG_VERSION != $GIT_DESCRIBE ];then
 	exit 1
 fi
 
+GIT_TAG_VERSION=${GIT_TAG_VERSION#v}
+
 set -x
 sudo docker build . -t mikefalcondev/fsyslog:$GIT_TAG_VERSION
 sudo docker push mikefalcondev/fsyslog:$GIT_TAG_VERSION
