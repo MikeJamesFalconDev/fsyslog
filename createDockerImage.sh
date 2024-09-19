@@ -11,7 +11,7 @@ GIT_TAG_VERSION=`git describe --abbrev=0`
 GIT_DESCRIBE=`git describe`
 
 if [ $GIT_TAG_VERSION != $GIT_DESCRIBE ];then
-	echo "There have been commits since last version. Please tag and push version. 'git tag -a v0.0.1 -m "my version 0.0.1'""
+	echo 'There have been commits since last version. Please tag and push version. git tag -a v0.0.1 -m "my version 0.0.1"'
 	exit 1
 fi
 
