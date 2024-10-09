@@ -1,3 +1,4 @@
+import os
 import socketserver
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
@@ -21,7 +22,7 @@ def get_config():
         config = toml.load(f)
     return config
 
-class Fsyslog(socketserver.StreamRequestHandler):
+class Fsyslog():
     
     def configure(self):
         self.config = get_config()
@@ -149,12 +150,23 @@ class Fsyslog(socketserver.StreamRequestHandler):
             # TODO threshold de eventos para mandar mail.
             # send_error(err,self.config['email'])
 
+class FsyslogTCP(Fsyslog, socketserver.StreamRequestHandler):
+    pass
+
+class FsyslogUDP(Fsyslog, socketserver.DatagramRequestHandler):
+    pass
 
 if __name__ == "__main__":
     config = get_config()
     HOST = config["server"]['host']
     PORT = config['server']['port']
-    print(f'Listening on {HOST}:{PORT}')
+    processid = os.fork()
+    if processid == 0 :
+        print(f'Listening on UDP {HOST}:{PORT}')
+        with socketserver.UDPServer((HOST, PORT), FsyslogUDP) as server:
+            server.serve_forever()
 
-    with socketserver.TCPServer((HOST, PORT), Fsyslog) as server:
-        server.serve_forever()
+    else:
+        print(f'Listening on TCP {HOST}:{PORT}')
+        with socketserver.TCPServer((HOST, PORT), FsyslogTCP) as server:
+            server.serve_forever()
