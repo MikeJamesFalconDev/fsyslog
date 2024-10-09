@@ -1,0 +1,13 @@
+[loggers.root]
+    handlers = ['file']
+    level = 'INFO'
+
+[handlers.file]
+    class = 'logging.handlers.RotatingFileHandler'
+    filename =  'logs/fsyslog.log'
+    maxBytes = 10240000
+    backupCount = 3    
+
+[formatters.default]
+    format = '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+    datefmt = '%Y-%m-%d %H:%M:%S'
