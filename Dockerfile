@@ -6,7 +6,10 @@ WORKDIR /opt/fsyslog
 USER fsyslog
 ADD requirements.txt .
 RUN pip install -r requirements.txt
-ADD config.toml.sample .
+RUN mkdir config
+ADD config/config.toml.sample config/.
+ADD config/logging.toml
+RUN mkdir logs
 ADD field_process.py .
 ADD fsyslog.py .
 EXPOSE 5140
