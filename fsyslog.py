@@ -16,8 +16,8 @@ CONFIG_FOLDER = 'config'
 CONFIG_FILE = f'{CONFIG_FOLDER}/config.toml'
 LOGGING_CONFIG_FILE = f'{CONFIG_FOLDER}/logging.toml'
 
-arbor_tms_mitigation_regex = r"<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'(?P<AlarmID>[^']+)'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)"
-arbor_host_detection_regex = r"<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^#]+)\s#(?P<AlarmID>[^,]+),\s+start\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}),\s+duration\s+(?P<duration>\d+)(,\s+stop\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(,\s+direction\s+(?P<direction>[^,]+),\s+host\s+(?P<host>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}), signatures\s+\((?P<signatures>[^)]+)\),\s+impact\s+(?P<impact>[^,]+))?,\s+importance\s(?P<importance>[^,]+),\s+managed_objects\s+\((?P<client>[^)]+)\)(, is now done)?(,\s+\(parent\s+managed\s+object\s+(?P<parent_managed_object>[^)]+)\))?(,\s+impact\s+(?P<impact2>.*))?"
+arbor_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'(?P<AlarmID>[^']+)'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)")
+arbor_host_detection_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^#]+)\s#(?P<AlarmID>[^,]+),\s+start\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}),\s+duration\s+(?P<duration>\d+)(,\s+stop\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(,\s+direction\s+(?P<direction>[^,]+),\s+host\s+(?P<host>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}), signatures\s+\((?P<signatures>[^)]+)\),\s+impact\s+(?P<impact>[^,]+))?,\s+importance\s(?P<importance>[^,]+),\s+managed_objects\s+\((?P<client>[^)]+)\)(, is now done)?(,\s+\(parent\s+managed\s+object\s+(?P<parent_managed_object>[^)]+)\))?(,\s+impact\s+(?P<impact2>.*))?")
 
 def get_config():
     config = {}
@@ -73,14 +73,14 @@ class Fsyslog():
     def parse_arbor(self, message):
 # Arbor  <125>Oct  9 15:35:10 pfsp: TMS mitigation 'Alert 10696181 IPv4 Auto-Mitigation' started at 2024-10-09 09:35:09 CST, leader arbui2.opentransit.net, managed object 'ITELLUM' (5729), first diversion prefix 190.61.60.251/32
         logging.info(f'Message {message}')
-        logging.info(arbor_tms_mitigation_regex)
-        m = re.compile(arbor_tms_mitigation_regex).match(message)
+        m = arbor_tms_mitigation_regex.match(message)
         if m:
             logging.info('Arbor TMS Mitigation message')
             d = m.groupdict()
         else:
-            m = re.compile(arbor_host_detection_regex).match(message)
+            m = arbor_host_detection_regex.match(message)
             if m:
+                logging.info('Arbor Host Detection message')
                 d = m.groupdict()
                 # Due to inconsistend ordering in the message, impact appears before or after other fields. This force me to create a second impact field. The following code puts it back under impact.
                 if 'impact2' in d:
@@ -138,9 +138,6 @@ class Fsyslog():
                     targetOn[target] = targetConf['value']
 
 
-
-            
-
     def handle(self):
         self.configure()
         client = influxdb_client.InfluxDBClient(url=self.config['influx']['uri'], token=self.config['influx']['token'], org=self.config['influx']['org'])
@@ -154,7 +151,7 @@ class Fsyslog():
                 return
             write_api.write(bucket=self.config['influx']["bucket"], org=self.config['influx']["org"], record=point)
         except Exception as err:
-            logging.error('Could not parse message: ' + str(message))
+            logging.error('Could not parse message: ' + str(message) + '/n' + str(err))
             # logging.exception(err)
             # TODO threshold de eventos para mandar mail.
             # send_error(err,self.config['email'])

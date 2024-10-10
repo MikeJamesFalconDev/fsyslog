@@ -1,5 +1,7 @@
 from datetime import datetime
 import time
+import logging
+
 
 def identity(value):
     return value
@@ -18,5 +20,5 @@ processMap = {
 }
 
 def process(value, process_as):
-    print(f'Converting {value} as {process_as} with function {processMap[process_as]}')
+    logging.info(f'Converting {value} as {process_as} with function {processMap[process_as]}')
     return processMap[process_as](value)
