@@ -7,8 +7,8 @@ USER fsyslog
 ADD requirements.txt .
 RUN pip install -r requirements.txt
 RUN mkdir config
-ADD config/config.toml.sample config/.
-ADD config/logging.toml
+ADD config/config.toml.sample config/
+ADD config/logging.toml config/
 RUN mkdir logs
 ADD field_process.py .
 ADD fsyslog.py .
