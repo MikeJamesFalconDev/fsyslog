@@ -16,7 +16,7 @@ CONFIG_FOLDER = 'config'
 CONFIG_FILE = f'{CONFIG_FOLDER}/config.toml'
 LOGGING_CONFIG_FILE = f'{CONFIG_FOLDER}/logging.toml'
 
-arbor_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'(?P<AlarmID>[^']+)'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)")
+arbor_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'Alert\s+(?P<AlarmID>\d+)[^']*'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)")
 arbor_host_detection_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^#]+)\s#(?P<AlarmID>[^,]+),\s+start\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}),\s+duration\s+(?P<duration>\d+)(,\s+stop\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(,\s+direction\s+(?P<direction>[^,]+),\s+host\s+(?P<host>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}), signatures\s+\((?P<signatures>[^)]+)\),\s+impact\s+(?P<impact>[^,]+))?,\s+importance\s(?P<importance>[^,]+),\s+managed_objects\s+\((?P<client>[^)]+)\)(, is now done)?(,\s+\(parent\s+managed\s+object\s+(?P<parent_managed_object>[^)]+)\))?(,\s+impact\s+(?P<impact2>.*))?")
 
 def get_config():
