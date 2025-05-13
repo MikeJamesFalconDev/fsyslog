@@ -18,6 +18,7 @@ LOGGING_CONFIG_FILE = f'{CONFIG_FOLDER}/logging.toml'
 
 arbor_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'Alert\s+(?P<AlarmID>\d+)[^']*'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)")
 arbor_host_detection_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^#]+)\s#(?P<AlarmID>[^,]+),\s+start\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}),\s+duration\s+(?P<duration>\d+)(,\s+stop\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(,\s+direction\s+(?P<direction>[^,]+),\s+host\s+(?P<host>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}), signatures\s+\((?P<signatures>[^)]+)\),\s+impact\s+(?P<impact>[^,]+))?,\s+importance\s(?P<importance>[^,]+),\s+managed_objects\s+\((?P<client>[^)]+)\)(, is now done)?(,\s+\(parent\s+managed\s+object\s+(?P<parent_managed_object>[^)]+)\))?(,\s+impact\s+(?P<impact2>.*))?")
+wangard_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+:\s+type=(?P<message_type>[^,]+),host=(?P<host>[^,]+),anomaly_id=(?P<anomaly_id>\d+),prefix=(?P<prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}),description=(?P<description>[^,]+),anomaly=(?P<anomaly>[^,]+),peak_pkts=(?P<peak_pkts>\d+),peak_bits=(?P<peak_bits>\d+),from=(?P<from>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),until=(?P<until>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),duration=(?P<duration>\d+)(?P<duration_unit>[A-Za-z]+)")
 
 def get_config():
     config = {}
@@ -91,13 +92,27 @@ class Fsyslog():
                 return {}
         return d
 
+    def parse_wangard(self, message):
+# Wangard  <28>May 13 16:52:32  :   type=end,host=colossus,anomaly_id=429373,prefix=187.108.235.80/29,description=ASUFINET,anomaly=IP bits/s > 1,peak_pkts=102,peak_bits=81061,from=2025-05-13 16:50:12,until=2025-05-13 16:50:30,duration=18s
+        logging.info(f'Message {message}')
+        m = wangard_tms_mitigation_regex.match(message)
+        if m:
+            logging.info('Wangard message')
+            d = m.groupdict()
+        else:
+            logging.warning('Wangard regex not matched')
+            return {}
+        return d
+
     def parse(self, message):
 
         json_payload = self.parse_arbor(message)
         if not(json_payload):
             json_payload = self.parse_kentik(message)
         if not(json_payload):
-            logging.warning('Not Kentik or Arbor format, not parsing!!!')
+            json_payload = self.parse_wangard(message)
+        if not(json_payload):
+            logging.warning('Not Kentik, Arbor or Wangard format, not parsing!!!')
             json_payload = {}
         for key in self.config['exclude']:
             rgx = self.config['exclude'][key]
