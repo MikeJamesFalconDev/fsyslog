@@ -99,7 +99,7 @@ class Fsyslog():
         start_str = '- - - -'
         pos = message.find(start_str)
         if pos >= 0:
-            key_values = message[pos + len(start_str):]
+            key_values = message[pos + len(start_str):].strip()
             for entry  in key_values.split(' '):
                 key, value = entry.split('=')
                 d[key] = value.replace('"', '')
@@ -169,7 +169,7 @@ class Fsyslog():
                 return
             write_api.write(bucket=self.config['influx']["bucket"], org=self.config['influx']["org"], record=point)
         except Exception as err:
-            logging.error('Could not parse message: ' + str(message) + '/n' + str(err))
+            logging.error('Could not parse message: ' + str(message) + '\n' + str(err))
             # logging.exception(err)
             # TODO threshold de eventos para mandar mail.
             # send_error(err,self.config['email'])
