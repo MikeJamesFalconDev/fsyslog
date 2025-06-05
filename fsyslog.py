@@ -94,6 +94,7 @@ class Fsyslog():
 
     def parse_fortigate(self, message):
 # <189>1 2025-06-04T15:29:06Z FortiGate-1800F-GUA - - - - eventtime=1749050946187327342 tz="-0600" logid="0000000013" type="traffic" subtype="forward" level="notice" vd="root" srcip=2803:1040:1802:3b4b:7ca4:6cd6:e0de:714d srcport=58769 srcintf="port36" srcintfrole="wan" dstip=2803:e880:8111:1b:: dstport=53 dstintf="ZONA-DNS" dstintfrole="lan" sessionid=395601599 proto=17 action="accept" policyid=430 policytype="policy" poluuid="bd93d5a2-0bdf-51ef-d488-97112a346de5" policyname="SGACTNICASAIPV6" srccountry="Nicaragua" dstcountry="Guatemala" service="DNS" trandisp="noop" duration=30 sentbyte=92 rcvdbyte=197 sentpkt=1 rcvdpkt=1 appcat="unscanned" dsthwvendor="HP" masterdstmac="94:18:82:68:22:35" dstmac="94:18:82:68:22:35" dstserver=1
+        message = str(message)
         logging.info(f'Message {message}')
         d = {}
         start_str = '- - - -'
