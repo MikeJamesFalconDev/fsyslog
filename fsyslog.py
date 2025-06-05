@@ -18,7 +18,7 @@ LOGGING_CONFIG_FILE = f'{CONFIG_FOLDER}/logging.toml'
 
 arbor_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^']+)\s'Alert\s+(?P<AlarmID>\d+)[^']*'\s+(started\sat\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(stopped\sat\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?, leader\s+(?P<leader>[^,^\s]+), managed object\s+'(?P<client>[^']+)'\s+\(\d+\),\s+first diversion prefix (?P<first_diversion_prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d+)")
 arbor_host_detection_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+pfsp:\s+(?P<message_type>[^#]+)\s#(?P<AlarmID>[^,]+),\s+start\s(?P<StartTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}),\s+duration\s+(?P<duration>\d+)(,\s+stop\s(?P<EndTime>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+[A-Z]{3}))?(,\s+direction\s+(?P<direction>[^,]+),\s+host\s+(?P<host>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}), signatures\s+\((?P<signatures>[^)]+)\),\s+impact\s+(?P<impact>[^,]+))?,\s+importance\s(?P<importance>[^,]+),\s+managed_objects\s+\((?P<client>[^)]+)\)(, is now done)?(,\s+\(parent\s+managed\s+object\s+(?P<parent_managed_object>[^)]+)\))?(,\s+impact\s+(?P<impact2>.*))?")
-wangard_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+:\s+type=(?P<message_type>[^,]+),host=(?P<host>[^,]+),anomaly_id=(?P<anomaly_id>\d+),prefix=(?P<prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}),description=(?P<description>[^,]+),anomaly=(?P<anomaly>[^,]+),peak_pkts=(?P<peak_pkts>\d+),peak_bits=(?P<peak_bits>\d+),from=(?P<from>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),until=(?P<until>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),duration=(?P<duration>\d+)(?P<duration_unit>[A-Za-z]+)")
+wangard_tms_mitigation_regex = re.compile(r".*<\d+>[A-Z][a-z]{2}\s+\d+\s+\d+:\d+:\d+\s+:\s+type=(?P<message_type>[^,]+),host=(?P<host>[^,]+),alarmid=(?P<alarmid>\d+),prefix=(?P<prefix>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}),description=(?P<description>[^,]+),anomaly=(?P<anomaly>[^,]+),peak_pkts=(?P<peak_pkts>\d+),peak_bits=(?P<peak_bits>\d+),from=(?P<from>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),until=(?P<until>\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{1,2}:\d{1,2}),duration=(?P<duration_modifier>[^\d]*)(?P<duration>\d+)(?P<duration_unit>[A-Za-z]+)")
 
 def get_config():
     config = {}
@@ -92,16 +92,19 @@ class Fsyslog():
                 return {}
         return d
 
-    def parse_wangard(self, message):
-# Wangard  <28>May 13 16:52:32  :   type=end,host=colossus,anomaly_id=429373,prefix=187.108.235.80/29,description=ASUFINET,anomaly=IP bits/s > 1,peak_pkts=102,peak_bits=81061,from=2025-05-13 16:50:12,until=2025-05-13 16:50:30,duration=18s
+    def parse_fortigate(self, message):
+# <189>1 2025-06-04T15:29:06Z FortiGate-1800F-GUA - - - - eventtime=1749050946187327342 tz="-0600" logid="0000000013" type="traffic" subtype="forward" level="notice" vd="root" srcip=2803:1040:1802:3b4b:7ca4:6cd6:e0de:714d srcport=58769 srcintf="port36" srcintfrole="wan" dstip=2803:e880:8111:1b:: dstport=53 dstintf="ZONA-DNS" dstintfrole="lan" sessionid=395601599 proto=17 action="accept" policyid=430 policytype="policy" poluuid="bd93d5a2-0bdf-51ef-d488-97112a346de5" policyname="SGACTNICASAIPV6" srccountry="Nicaragua" dstcountry="Guatemala" service="DNS" trandisp="noop" duration=30 sentbyte=92 rcvdbyte=197 sentpkt=1 rcvdpkt=1 appcat="unscanned" dsthwvendor="HP" masterdstmac="94:18:82:68:22:35" dstmac="94:18:82:68:22:35" dstserver=1
         logging.info(f'Message {message}')
-        m = wangard_tms_mitigation_regex.match(message)
-        if m:
-            logging.info('Wangard message')
-            d = m.groupdict()
+        d = {}
+        start_str = '- - - -'
+        pos = message.find(start_str)
+        if pos >= 0:
+            key_values = message[pos + len(start_str):]
+            for entry  in key_values.split(' '):
+                key, value = entry.split('=')
+                d[key] = value.replace('"', '')
         else:
-            logging.warning('Wangard regex not matched')
-            return {}
+            return d
         return d
 
     def parse(self, message):
@@ -110,9 +113,9 @@ class Fsyslog():
         if not(json_payload):
             json_payload = self.parse_kentik(message)
         if not(json_payload):
-            json_payload = self.parse_wangard(message)
+            json_payload = self.parse_fortigate(message)
         if not(json_payload):
-            logging.warning('Not Kentik, Arbor or Wangard format, not parsing!!!')
+            logging.warning('Not Kentik, Arbor or Fortigate format, not parsing!!!')
             json_payload = {}
         for key in self.config['exclude']:
             rgx = self.config['exclude'][key]
