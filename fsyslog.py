@@ -101,9 +101,13 @@ class Fsyslog():
         pos = message.find(start_str)
         if pos >= 0:
             key_values = message[pos + len(start_str):].strip()
-            for entry  in key_values.split(' '):
-                key, value = entry.split('=')
-                d[key] = value.replace('"', '')
+            # Use regex to properly handle quoted values and spaces
+            pattern = r'(\w+)\s*=\s*("([^"]*)"|([^\s]+))'
+            matches = re.findall(pattern, key_values)
+            for match in matches:
+                key = match[0]
+                value = match[2] if match[2] else match[3]
+                d[key] = value
         else:
             return d
         return d
